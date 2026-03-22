@@ -12,8 +12,7 @@ When a new message arrives and you have no prior context, **do this first**:
 
 1. **Read recent history**: `python3 ~/dev/clarionbot/scripts/recent.py --conversations 3`
 2. **If the message mentions a project**: `python3 ~/dev/clarionbot/scripts/context.py <project-name>`
-3. **Log the incoming message** (see Logging below)
-4. Respond, then log your reply
+3. Respond
 
 This is how you remember across gaps in time.
 
@@ -21,19 +20,12 @@ This is how you remember across gaps in time.
 
 ## Logging Every Exchange
 
-Every Telegram message you receive and every reply you send must be logged:
+Logging is **fully automatic via hooks** — do NOT call `log.py` manually:
 
-```bash
-# Log incoming user message
-python3 ~/dev/clarionbot/scripts/log.py user "<content>" [--ts "<ISO8601>"] [--new-session] [--title "..."]
+- `hook-incoming.py` fires on `UserPromptSubmit` and logs all incoming Telegram messages
+- `hook-reply.py` fires on `PostToolUse` for `mcp__plugin_telegram_telegram__reply` and logs all replies
 
-# Log your reply
-python3 ~/dev/clarionbot/scripts/log.py assistant "<content>"
-```
-
-- `--ts` lets you backfill with the original Telegram timestamp
-- `--new-session` forces a new conversation (also triggered automatically by "New session: …" in content)
-- The message_id is printed on success — save it if you need to link an artifact
+Calling `log.py` manually will cause duplicate entries. The only time to call `log.py` directly is to backfill history that predates the hooks, or to log non-Telegram content explicitly.
 
 **Conversation detection**: Messages within a 2-hour idle window belong to the same conversation. Longer gap = new conversation automatically.
 
