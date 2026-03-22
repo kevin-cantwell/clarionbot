@@ -40,7 +40,13 @@ def now_iso():
 
 
 def parse_iso(ts_str):
-    return datetime.strptime(ts_str, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    # Handle both with and without milliseconds: 2026-03-22T16:55:21Z and 2026-03-22T16:55:21.000Z
+    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+        try:
+            return datetime.strptime(ts_str, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    raise ValueError(f"Unrecognized timestamp format: {ts_str!r}")
 
 
 def get_or_create_conversation(conn, force_new, title, ts):
