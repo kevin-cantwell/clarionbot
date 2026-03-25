@@ -58,6 +58,23 @@ If the artifact is worth keeping long-term, commit it.
 
 ---
 
+## Sharing Local Servers via Expose
+
+To share a locally running HTTP server with Kevin over Telegram, use the `expose` CLI:
+
+```bash
+expose tunnel --server=cantwell.dev <port>
+```
+
+**Do NOT set a `--subdomain`** unless Kevin explicitly requests one. Let expose generate a random subdomain. Then send Kevin the full URL via the reply tool.
+
+Example flow:
+1. Start a local server: `python3 -m http.server 8765 --directory /path/to/files &`
+2. Tunnel it: `expose tunnel --server=cantwell.dev 8765`
+3. Grab the URL from the output and send it to Kevin
+
+---
+
 ## Searching History
 
 ```bash
