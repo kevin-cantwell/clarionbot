@@ -5,8 +5,11 @@ Retrieve relevant message history for a topic or project.
 Usage:
     context.py <topic> [--limit N] [--full]
 
-Searches message history for the topic keyword, groups by conversation,
-and prints a digest useful for orienting at the start of a session.
+Searches (in priority order):
+  1. Conversations linked to a project with that name
+  2. Conversations tagged with that topic
+  3. Conversations with FTS message matches
+
 --full prints complete message content instead of truncating.
 """
 
@@ -36,29 +39,42 @@ def main():
 
     conn = get_conn()
     try:
-        # Find conversations tagged with this topic
-        tagged = conn.execute("""
-            SELECT DISTINCT c.id, c.started_at, c.title, c.summary
+        # 1. Project-linked conversations (highest priority)
+        project_convs = conn.execute("""
+            SELECT DISTINCT c.id, c.started_at, c.title, c.summary, 'project' AS source
+            FROM projects p
+            JOIN conversation_projects cp ON cp.project_id = p.id
+            JOIN conversations c ON cp.conversation_id = c.id
+            WHERE lower(p.name) = lower(?)
+            ORDER BY c.started_at DESC
+        """, (args.topic,)).fetchall()
+
+        # 2. Topic-tagged conversations
+        tagged_convs = conn.execute("""
+            SELECT DISTINCT c.id, c.started_at, c.title, c.summary, 'tag' AS source
             FROM conversation_topics ct
             JOIN conversations c ON ct.conversation_id = c.id
             WHERE lower(ct.topic) = lower(?)
             ORDER BY c.started_at DESC
         """, (args.topic,)).fetchall()
 
-        # Also find conversations via FTS match
-        fts = conn.execute("""
-            SELECT DISTINCT c.id, c.started_at, c.title, c.summary
-            FROM messages_fts f
-            JOIN messages m ON f.rowid = m.id
-            JOIN conversations c ON m.conversation_id = c.id
-            WHERE messages_fts MATCH ?
-            ORDER BY c.started_at DESC
-            LIMIT ?
-        """, (args.topic, args.limit)).fetchall()
+        # 3. FTS matches
+        try:
+            fts_convs = conn.execute("""
+                SELECT DISTINCT c.id, c.started_at, c.title, c.summary, 'fts' AS source
+                FROM messages_fts f
+                JOIN messages m ON f.rowid = m.id
+                JOIN conversations c ON m.conversation_id = c.id
+                WHERE messages_fts MATCH ?
+                ORDER BY c.started_at DESC
+                LIMIT ?
+            """, (args.topic, args.limit)).fetchall()
+        except sqlite3.OperationalError:
+            fts_convs = []
 
         seen_ids = set()
         conversations = []
-        for row in list(tagged) + list(fts):
+        for row in list(project_convs) + list(tagged_convs) + list(fts_convs):
             if row["id"] not in seen_ids:
                 seen_ids.add(row["id"])
                 conversations.append(row)
@@ -67,23 +83,40 @@ def main():
             print(f"No history found for topic: {args.topic}")
             return
 
-        print(f"=== Context for: {args.topic} ({len(conversations)} conversations) ===\n")
+        source_label = ""
+        if project_convs:
+            source_label = " [project]"
+        elif tagged_convs:
+            source_label = " [tagged]"
+
+        print(f"=== Context for: {args.topic}{source_label} ({len(conversations)} conversations) ===\n")
 
         for conv in conversations:
             title = conv["title"] or "(untitled)"
-            print(f"--- Conversation {conv['id']} | {conv['started_at']} | {title} ---")
+            src = conv["source"]
+            print(f"--- Conversation {conv['id']} | {conv['started_at']} | {title} [{src}] ---")
             if conv["summary"]:
                 print(f"Summary: {conv['summary']}")
 
-            messages = conn.execute("""
-                SELECT ts, role, content FROM messages
-                WHERE conversation_id = ?
-                  AND id IN (
-                      SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?
-                  )
-                ORDER BY ts ASC
-                LIMIT 20
-            """, (conv["id"], args.topic)).fetchall()
+            # For project/tag convos show recent messages; for FTS show matching messages
+            if src in ("project", "tag"):
+                messages = conn.execute("""
+                    SELECT ts, role, content FROM messages
+                    WHERE conversation_id = ?
+                    ORDER BY ts DESC
+                    LIMIT 10
+                """, (conv["id"],)).fetchall()
+                messages = list(reversed(messages))
+            else:
+                messages = conn.execute("""
+                    SELECT ts, role, content FROM messages
+                    WHERE conversation_id = ?
+                      AND id IN (
+                          SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?
+                      )
+                    ORDER BY ts ASC
+                    LIMIT 20
+                """, (conv["id"], args.topic)).fetchall()
 
             for msg in messages:
                 content = msg["content"] if args.full else msg["content"][:300]

@@ -1,7 +1,9 @@
 db/messages.db
 db/.current_conversation
+db/.current_project
 __pycache__/
 *.pyc
 .DS_Store
 artifacts/*
 !artifacts/.gitkeep
+config.env
