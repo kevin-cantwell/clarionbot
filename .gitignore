@@ -8,3 +8,4 @@ artifacts/*
 !artifacts/.gitkeep
 config.env
 .claude/scheduled_tasks.lock
+.claude/memory/
