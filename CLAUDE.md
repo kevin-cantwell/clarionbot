@@ -85,19 +85,19 @@ When a Telegram message asks for project work (coding, research, multi-step task
 
 ---
 
-## Sharing Local Servers via Expose
+## Sharing Local Servers via Tunnel
 
-To share a locally running HTTP server with the owner over Telegram, use the `expose` CLI:
+To share a locally running HTTP server with the owner over Telegram, use a tunneling tool to expose a local port to a public URL. Common options:
 
-```bash
-expose tunnel --server=<YOUR_DOMAIN> <port>
-```
+- **ngrok**: `ngrok http <port>`
+- **expose** (self-hosted): `expose tunnel --server=<YOUR_DOMAIN> <port>` — see [github.com/beyondcode/expose](https://github.com/beyondcode/expose) or self-host your own
+- **Cloudflare Tunnel**: `cloudflared tunnel --url http://localhost:<port>`
 
-**Do NOT set a `--subdomain`** unless the owner explicitly requests one. Let expose generate a random subdomain. Then send the full URL via the reply tool.
+Don't set a fixed subdomain unless the owner explicitly requests one — let the tool generate a random one. Send the resulting public URL to the owner via the reply tool.
 
 Example flow:
 1. Start a local server: `python3 -m http.server 8765 --directory /path/to/files &`
-2. Tunnel it: `expose tunnel --server=<YOUR_DOMAIN> 8765`
+2. Tunnel it with whichever tool is configured
 3. Grab the URL from the output and send it to the owner
 
 ---
