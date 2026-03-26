@@ -14,8 +14,8 @@ ClarionBot is a persistent Telegram assistant powered by Claude Code. It runs on
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USERNAME>/clarionbot ~/dev/clarionbot
-cd ~/dev/clarionbot
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/clarionbot
+cd clarionbot
 ```
 
 ### 2. Configure
@@ -60,7 +60,7 @@ Set up the Telegram channel in Claude Code and connect your bot token. See the [
 ### 6. Start a Claude Code session
 
 ```bash
-cd ~/dev/clarionbot
+cd clarionbot
 claude
 ```
 
