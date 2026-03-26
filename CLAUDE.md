@@ -58,6 +58,33 @@ If the artifact is worth keeping long-term, commit it.
 
 ---
 
+## Sub-Agent Dispatch
+
+When a Telegram message asks for project work (coding, research, multi-step tasks), dispatch to a named sub-agent so the main session stays responsive.
+
+**Dispatch these:**
+- Explicit coding/implementation tasks ("add X to wileygame", "fix the bug in...")
+- Research tasks that take minutes ("look into options for...", "compare X and Y")
+- Anything multi-step where blocking the main session would delay Kevin's replies
+
+**Handle directly (no dispatch):**
+- Casual conversation, greetings, quick factual questions
+- Memory/context queries ("what did we decide about X?")
+- Multi-project overview requests
+- Short tasks completable in one turn
+
+**Dispatch flow:**
+1. Load project brief: `python3 scripts/project.py show <name>`
+2. Spawn agent via Agent tool with `name: "<project-name>"`, `subagent_type: "general-purpose"`, `run_in_background: true`
+3. Give the agent: project brief + active threads + open loops + the specific task
+4. Include standing instructions: use `decide.py`, `loop.py`, `thread.py`; no Telegram access; send completion via SendMessage
+5. When complete, relay the summary to Kevin via Telegram reply
+6. For follow-up messages to an active sub-agent: `SendMessage(to="<project-name>", ...)`
+
+**One sub-agent per project.** Multiple projects can run in parallel. New messages for the same project get forwarded via SendMessage, not a new spawn.
+
+---
+
 ## Sharing Local Servers via Expose
 
 To share a locally running HTTP server with Kevin over Telegram, use the `expose` CLI:
@@ -116,15 +143,28 @@ Do not commit `db/messages.db` or `db/.current_conversation` — these are gitig
 ├── CLAUDE.md              ← you are here (self-instructions)
 ├── scripts/
 │   ├── init-db.py         ← initialize the SQLite database
+│   ├── migrate-v2.py      ← one-time DB migration to v2 schema
 │   ├── log.py             ← log a message (user or assistant)
 │   ├── search.py          ← FTS search across all history
-│   ├── context.py         ← retrieve history for a topic/project
+│   ├── context.py         ← retrieve history for a topic/project (layered)
 │   ├── recent.py          ← show recent conversations
 │   ├── artifact.py        ← register a file as an artifact
-│   └── tag.py             ← tag current conversation with a topic
+│   ├── tag.py             ← tag conversation with topic or --project
+│   ├── project.py         ← project CRUD (create/update/show/list/touch)
+│   ├── thread.py          ← thread CRUD (sub-project discussion topics)
+│   ├── decide.py          ← record a decision with optional supersession
+│   ├── loop.py            ← open loop tracking (open/resolve/list/stale)
+│   ├── summarize.py       ← generate conversation summaries via Ollama
+│   ├── hook-incoming.py   ← UserPromptSubmit: log + inject context
+│   ├── hook-reply.py      ← PostToolUse: log assistant Telegram replies
+│   └── hook-stop.py       ← Stop: summarize + extract decisions/loops
+├── .claude/
+│   └── agents/
+│       └── project-worker.md  ← sub-agent definition for project dispatch
 ├── db/
 │   ├── messages.db        ← SQLite database (gitignored)
-│   └── .current_conversation ← current conv id (gitignored)
+│   ├── .current_conversation ← current conv id (gitignored)
+│   └── .current_project   ← current project name (gitignored)
 └── artifacts/             ← files created during conversations
 ```
 
