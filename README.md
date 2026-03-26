@@ -1,6 +1,6 @@
 # ClarionBot
 
-ClarionBot is a persistent Telegram assistant powered by Claude Code. It runs on your local machine, receives Telegram messages as Claude Code channel events, responds via the Telegram plugin, and automatically logs every exchange to a local SQLite database — giving Claude persistent memory across sessions.
+ClarionBot is a persistent Telegram assistant powered by Claude Code. It runs on your local machine, receives Telegram messages as [Claude Code channel](https://code.claude.com/docs/en/channels#supported-channels) events, responds via the Telegram channel, and automatically logs every exchange to a local SQLite database — giving Claude persistent memory across sessions.
 
 ## Prerequisites
 
@@ -55,7 +55,7 @@ Copy the JSON block printed by `setup.py` and merge it into your `~/.claude/sett
 
 ### 5. Configure the Telegram plugin
 
-Install the Telegram plugin in Claude Code and connect your bot token. Inside a Claude Code session, run `/telegram:configure` and follow the prompts. The plugin delivers Telegram messages as channel events that Claude Code can read and reply to.
+Set up the Telegram channel in Claude Code and connect your bot token. See the [Claude Code channels docs](https://code.claude.com/docs/en/channels#supported-channels) for setup instructions, then run `/telegram:configure` inside a Claude Code session to connect your bot token.
 
 ### 6. Start a Claude Code session
 
@@ -80,7 +80,7 @@ This slash command walks you through personalizing `CLAUDE.md` and `config.env` 
 
 ## How It Works
 
-1. A Telegram message arrives as a Claude Code channel event via the Telegram plugin
+1. A Telegram message arrives as a Claude Code channel event via the [Telegram channel](https://code.claude.com/docs/en/channels#supported-channels)
 2. `hook-incoming.py` fires and logs the message to SQLite
 3. Claude reads recent history to restore context, then responds using the Telegram reply tool
 4. `hook-reply.py` fires and logs the reply to SQLite
