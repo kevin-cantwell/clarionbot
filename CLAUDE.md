@@ -90,7 +90,7 @@ When a Telegram message asks for project work (coding, research, multi-step task
 To share a locally running HTTP server with the owner over Telegram, use a tunneling tool to expose a local port to a public URL. Common options:
 
 - **ngrok**: `ngrok http <port>`
-- **expose** (self-hosted): `expose tunnel --server=<YOUR_DOMAIN> <port>` — see [github.com/beyondcode/expose](https://github.com/beyondcode/expose) or self-host your own
+- **expose** (self-hosted): `expose tunnel --server=<YOUR_DOMAIN> <port>` — see [kevin-cantwell/expose](https://github.com/kevin-cantwell/expose) for a lightweight self-hosted option, or [beyondcode/expose](https://github.com/beyondcode/expose) for a more full-featured one
 - **Cloudflare Tunnel**: `cloudflared tunnel --url http://localhost:<port>`
 
 Don't set a fixed subdomain unless the owner explicitly requests one — let the tool generate a random one. Send the resulting public URL to the owner via the reply tool.
