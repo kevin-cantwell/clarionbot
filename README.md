@@ -1,22 +1,103 @@
 # ClarionBot
 
-A persistent Telegram assistant running on a local Mac mini, powered by Claude via Claude Code. Maintains a searchable conversation history across sessions using SQLite.
+ClarionBot is a persistent Telegram assistant powered by Claude Code. It runs on your local machine, receives Telegram messages as Claude Code channel events, responds via the Telegram plugin, and automatically logs every exchange to a local SQLite database — giving Claude persistent memory across sessions.
 
-## How it works
+## Prerequisites
 
-Telegram messages arrive as channel events via the [Claude Code Telegram plugin](https://github.com/anthropics/claude-code). Claude Code responds using the `mcp__plugin_telegram_telegram__reply` tool. Two hooks handle logging automatically:
+- [Claude Code](https://github.com/anthropics/claude-code) installed and authenticated
+- [Ollama](https://ollama.ai) running locally with `qwen2.5:3b` pulled (`ollama pull qwen2.5:3b`)
+- A Telegram bot token (create one via [@BotFather](https://t.me/botfather))
+- Python 3.9+
 
-- **`UserPromptSubmit`** → `scripts/hook-incoming.py` — logs every incoming Telegram message to SQLite
-- **`PostToolUse` (reply tool)** → `scripts/hook-reply.py` — logs every assistant reply to SQLite
+## Installation
 
-The database gives Claude persistent memory across sessions. At the start of each session, Claude reads recent history to restore context.
+### 1. Clone the repo
 
-## Directory structure
+```bash
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/clarionbot ~/dev/clarionbot
+cd ~/dev/clarionbot
+```
+
+### 2. Configure
+
+```bash
+cp config.env.example config.env
+```
+
+Edit `config.env` and fill in your values:
+
+```
+CLARIONBOT_OWNER=YourName
+CLARIONBOT_DOMAIN=yourdomain.com   # for expose tunneling
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=qwen2.5:3b
+```
+
+### 3. Run the setup script
+
+```bash
+python3 scripts/setup.py
+```
+
+This will:
+- Initialize the SQLite database
+- Print the exact hook configuration block you need to add to `~/.claude/settings.json`
+
+### 4. Add hooks to `~/.claude/settings.json`
+
+Copy the JSON block printed by `setup.py` and merge it into your `~/.claude/settings.json`. It registers three hooks:
+
+| Hook | Script | Purpose |
+|------|--------|---------|
+| `UserPromptSubmit` | `hook-incoming.py` | Logs every incoming Telegram message |
+| `PostToolUse` (reply) | `hook-reply.py` | Logs every assistant reply |
+| `Stop` | `hook-stop.py` | Summarizes the conversation via Ollama |
+
+### 5. Configure the Telegram plugin
+
+Follow the [Claude Code Telegram plugin docs](https://github.com/anthropics/claude-code-telegram) to connect your bot token. The plugin delivers Telegram messages as channel events that Claude Code can read and reply to.
+
+### 6. Start a Claude Code session
+
+```bash
+cd ~/dev/clarionbot
+claude
+```
+
+Claude will read `CLAUDE.md` at session start and know how to handle incoming messages.
+
+### 7. (Optional) Run `/setup` for interactive onboarding
+
+Inside a Claude Code session, run:
+
+```
+/setup
+```
+
+This slash command walks you through personalizing `CLAUDE.md` and `config.env` — replacing placeholder values with your name, domain, GitHub username, and Ollama model preference.
+
+---
+
+## How It Works
+
+1. A Telegram message arrives as a Claude Code channel event via the Telegram plugin
+2. `hook-incoming.py` fires and logs the message to SQLite
+3. Claude reads recent history to restore context, then responds using the Telegram reply tool
+4. `hook-reply.py` fires and logs the reply to SQLite
+5. When Claude stops responding, `hook-stop.py` calls Ollama to summarize the conversation and extract any decisions or open questions into the database
+
+The database gives Claude a persistent memory across sessions. Scripts like `context.py` and `recent.py` let Claude retrieve relevant history at the start of each new session.
+
+---
+
+## Directory Structure
 
 ```
 clarionbot/
-├── CLAUDE.md              ← self-instructions for Claude
+├── CLAUDE.md              ← self-instructions for Claude (customize this)
+├── config.env.example     ← configuration template
 ├── scripts/
+│   ├── setup.py           ← first-run setup
 │   ├── init-db.py         ← initialize the SQLite database
 │   ├── log.py             ← log a message (user or assistant)
 │   ├── recent.py          ← show recent conversations
@@ -24,51 +105,45 @@ clarionbot/
 │   ├── context.py         ← retrieve history for a topic/project
 │   ├── artifact.py        ← register a file as an artifact
 │   ├── tag.py             ← tag current conversation with a topic
+│   ├── project.py         ← project CRUD
+│   ├── thread.py          ← thread CRUD (sub-topics per project)
+│   ├── decide.py          ← record decisions
+│   ├── loop.py            ← open loop tracking
+│   ├── summarize.py       ← generate summaries via Ollama
 │   ├── hook-incoming.py   ← UserPromptSubmit hook
-│   └── hook-reply.py      ← PostToolUse hook
+│   ├── hook-reply.py      ← PostToolUse hook
+│   └── hook-stop.py       ← Stop hook
+├── .claude/
+│   ├── agents/
+│   │   └── project-worker.md  ← sub-agent for project dispatch
+│   └── commands/
+│       └── setup.md           ← /setup slash command
 ├── db/
 │   ├── messages.db        ← SQLite database (gitignored)
-│   └── .current_conversation ← current conversation id (gitignored)
-└── artifacts/             ← files created during conversations (gitignored)
+│   └── .current_conversation  ← session state (gitignored)
+└── artifacts/             ← files created during conversations
 ```
 
-## Setup
+---
 
-**1. Initialize the database**
-```bash
-python3 scripts/init-db.py
-```
+## Customization
 
-**2. Configure hooks in `~/.claude/settings.json`**
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [{
-          "type": "command",
-          "command": "python3 /path/to/clarionbot/scripts/hook-incoming.py"
-        }]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "mcp__plugin_telegram_telegram__reply",
-        "hooks": [{
-          "type": "command",
-          "command": "python3 /path/to/clarionbot/scripts/hook-reply.py"
-        }]
-      }
-    ]
-  }
-}
-```
+The core of ClarionBot is `CLAUDE.md` — Claude reads it at the start of every session. It controls:
 
-**3. Set up the Telegram plugin**
+- How Claude orients itself (reading recent history, checking project context)
+- How sub-agents are dispatched for longer tasks
+- How artifacts and decisions are recorded
+- Personal context about the owner
 
-Follow the [Claude Code Telegram plugin docs](https://github.com/anthropics/claude-code) to configure your bot token.
+After running `/setup`, edit `CLAUDE.md` freely to add your own preferences, projects, and instructions. The more context you give Claude, the more useful it becomes.
 
-## Scripts
+### Changing the Ollama model
+
+Update `OLLAMA_MODEL` in `config.env`. Any model available in your local Ollama instance works. `qwen2.5:3b` is a good default — fast and small enough to summarize conversations without blocking.
+
+---
+
+## Scripts Reference
 
 | Script | Usage |
 |--------|-------|
@@ -77,4 +152,7 @@ Follow the [Claude Code Telegram plugin docs](https://github.com/anthropics/clau
 | `context.py` | `python3 scripts/context.py <topic>` |
 | `tag.py` | `python3 scripts/tag.py <topic> [topic2 ...]` |
 | `artifact.py` | `python3 scripts/artifact.py /path/to/file --description "..."` |
-| `log.py` | `python3 scripts/log.py user "message" [--ts "ISO8601"]` |
+| `project.py` | `python3 scripts/project.py show <name>` |
+| `decide.py` | `python3 scripts/decide.py "<decision>" --project <name>` |
+| `loop.py` | `python3 scripts/loop.py open "<question>" --project <name>` |
+| `log.py` | `python3 scripts/log.py user "message"` (manual backfill only) |
