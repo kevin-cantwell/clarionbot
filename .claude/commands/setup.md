@@ -7,7 +7,7 @@ You are helping the user personalize their ClarionBot installation. Walk through
 Run the Python setup script to initialize the database and print the hook config:
 
 ```bash
-python3 ~/dev/clarionbot/scripts/setup.py
+python3 scripts/setup.py
 ```
 
 Show the user the output, particularly the hook JSON block they need to add to `~/.claude/settings.json`.
@@ -28,17 +28,16 @@ You can skip any item the user doesn't want to set.
 
 After collecting answers, make the following edits:
 
-### CLAUDE.md (`~/dev/clarionbot/CLAUDE.md`)
+### CLAUDE.md (in the repo root)
 
 Read the file first, then:
 
 - Replace every occurrence of `the owner` with the user's name (if provided)
 - Replace `<YOUR_DOMAIN>` with the user's expose domain (if provided) — there are 2 occurrences in the expose section
-- Replace `~/dev/clarionbot` path references with the actual path if their dev dir is not `~/dev`
 - Replace `<YOUR_GITHUB_USERNAME>` with the user's GitHub username (if provided)
 - In the "About the Owner" section at the bottom, add a line like: `The owner is <NAME>. Projects live at github.com/<USERNAME>.`
 
-### `config.env` (`~/dev/clarionbot/config.env`)
+### `config.env` (in the repo root)
 
 Read the file first, then update:
 

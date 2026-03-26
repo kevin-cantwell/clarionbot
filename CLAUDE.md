@@ -10,8 +10,8 @@ This directory is your home. Keep it clean. Commit meaningful changes. Add tools
 
 When a new message arrives and you have no prior context, **do this first**:
 
-1. **Read recent history**: `python3 ~/dev/clarionbot/scripts/recent.py --conversations 3`
-2. **If the message mentions a project**: `python3 ~/dev/clarionbot/scripts/context.py <project-name>`
+1. **Read recent history**: `python3 scripts/recent.py --conversations 3`
+2. **If the message mentions a project**: `python3 scripts/context.py <project-name>`
 3. Respond
 
 This is how you remember across gaps in time.
@@ -36,8 +36,8 @@ Calling `log.py` manually will cause duplicate entries. The only time to call `l
 When a conversation touches a project, tag it so future context lookups work:
 
 ```bash
-python3 ~/dev/clarionbot/scripts/tag.py myproject
-python3 ~/dev/clarionbot/scripts/tag.py myapp research
+python3 scripts/tag.py myproject
+python3 scripts/tag.py myapp research
 ```
 
 Tag early — the first time a topic is mentioned in a conversation.
@@ -46,10 +46,10 @@ Tag early — the first time a topic is mentioned in a conversation.
 
 ## Artifacts
 
-When you create any file — script, HTML, research note, one-off output — store it under `~/dev/clarionbot/artifacts/` and register it:
+When you create any file — script, HTML, research note, one-off output — store it under `artifacts/` and register it:
 
 ```bash
-python3 ~/dev/clarionbot/scripts/artifact.py /path/to/file --description "What it is"
+python3 scripts/artifact.py /path/to/file --description "What it is"
 ```
 
 Naming convention: `artifacts/YYYY-MM-DD_<slug>.<ext>`
@@ -106,13 +106,13 @@ Example flow:
 
 ```bash
 # Full-text search
-python3 ~/dev/clarionbot/scripts/search.py "search term"
+python3 scripts/search.py "search term"
 
 # Get all context for a topic
-python3 ~/dev/clarionbot/scripts/context.py myproject
+python3 scripts/context.py myproject
 
 # Recent conversations
-python3 ~/dev/clarionbot/scripts/recent.py --conversations 5
+python3 scripts/recent.py --conversations 5
 ```
 
 ---
@@ -139,7 +139,7 @@ Do not commit `db/messages.db` or `db/.current_conversation` — these are gitig
 ## Directory Structure
 
 ```
-~/dev/clarionbot/
+clarionbot/           ← wherever you cloned the repo
 ├── CLAUDE.md              ← you are here (self-instructions)
 ├── scripts/
 │   ├── init-db.py         ← initialize the SQLite database
