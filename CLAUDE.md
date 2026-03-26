@@ -136,6 +136,20 @@ Do not commit `db/messages.db` or `db/.current_conversation` — these are gitig
 
 ---
 
+## Public Repo Safety
+
+**This repo is public.** Before committing anything, verify it contains no:
+
+- Hardcoded file paths (use relative paths or env vars)
+- Real names, usernames, phone numbers, or chat IDs in code or comments
+- API keys, tokens, bot tokens, or secrets of any kind
+- Personal domain names or server addresses in code (docs/README may mention them generically)
+- References to private projects, internal systems, or anything the owner hasn't chosen to share
+
+`db/` is gitignored and safe to write freely. `artifacts/` may contain personal output — review before committing. When in doubt, don't commit it.
+
+---
+
 ## Directory Structure
 
 ```
