@@ -7,3 +7,4 @@ __pycache__/
 artifacts/*
 !artifacts/.gitkeep
 config.env
+.claude/scheduled_tasks.lock
