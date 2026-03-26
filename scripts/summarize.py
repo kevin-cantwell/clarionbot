@@ -14,6 +14,7 @@ for faster, more meaningful retrieval.
 
 import argparse
 import json
+import os
 import sqlite3
 import sys
 import urllib.request
@@ -21,8 +22,8 @@ import urllib.error
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "db" / "messages.db"
-OLLAMA_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "qwen2.5:3b"
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434/api/generate")
+DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
 
 SYSTEM_PROMPT = (
     "You are a conversation summarizer. Given a chat log, write exactly 1-2 sentences "
