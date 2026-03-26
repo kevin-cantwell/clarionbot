@@ -55,7 +55,7 @@ Copy the JSON block printed by `setup.py` and merge it into your `~/.claude/sett
 
 ### 5. Configure the Telegram plugin
 
-Follow the [Claude Code Telegram plugin docs](https://github.com/anthropics/claude-code-telegram) to connect your bot token. The plugin delivers Telegram messages as channel events that Claude Code can read and reply to.
+Install the Telegram plugin in Claude Code and connect your bot token. Inside a Claude Code session, run `/telegram:configure` and follow the prompts. The plugin delivers Telegram messages as channel events that Claude Code can read and reply to.
 
 ### 6. Start a Claude Code session
 
