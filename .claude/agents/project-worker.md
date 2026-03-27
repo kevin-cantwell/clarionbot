@@ -58,3 +58,4 @@ Keep it short. The owner reads on Telegram — no walls of text.
 - Don't over-engineer — do what was asked, not more
 - If blocked or uncertain, record it as an open loop and let the dispatcher know
 - The project brief you were given may be stale — check actual code/files when in doubt
+- **Never search for Telegram config files or `access.json`** — you have no Telegram access and never will. Do not spawn background tasks looking for chat IDs. Use only `SendMessage(to: "main")` to report back.
